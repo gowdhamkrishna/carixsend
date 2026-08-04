@@ -2,6 +2,8 @@ mod client;
 mod server;
 mod fileop;
 mod transfer;
+mod network;
+mod protocol;
 use std::env;
 
 fn main() {

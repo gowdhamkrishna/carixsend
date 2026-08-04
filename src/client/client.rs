@@ -8,7 +8,7 @@ use std::thread;
 
 pub fn start_client() {
 
-    let file_name = "movie.mp4";
+    let file_name = "file.txt";
 
     // Open file once
     let file = Arc::new(
@@ -42,34 +42,38 @@ pub fn start_client() {
         chunks.len()
     );
 
+    let chunks = Arc::new(chunks);
+    let num_workers = 4;
+    let chunks_per_worker = if chunks.is_empty() { 1 } else { (chunks.len() + num_workers - 1) / num_workers };
+
     let mut handles = Vec::new();
 
-    for chunk in chunks {
+    for worker_id in 0..num_workers {
+        let file = Arc::clone(&file);
+        let filename = file_name.to_string();
+        let chunks = Arc::clone(&chunks);
 
-        let file =
-            Arc::clone(&file);
+        handles.push(thread::spawn(move || {
+            let start_idx = worker_id * chunks_per_worker;
+            if start_idx >= chunks.len() {
+                return;
+            }
+            let end_idx = std::cmp::min(start_idx + chunks_per_worker, chunks.len());
+            let worker_chunks = &chunks[start_idx..end_idx];
 
-        let filename =
-            file_name.to_string();
+            let mut stream = TcpStream::connect("127.0.0.1:9000").expect("Cannot connect to server");
+            stream.set_nodelay(true).ok();
 
-        handles.push(
-            thread::spawn(move || {
-
-                let stream =
-                    TcpStream::connect(
-                        "127.0.0.1:9000"
-                    )
-                    .unwrap();
-
+            for chunk in worker_chunks {
                 perform_chunk_transfer(
-                    stream,
-                    file,
-                    filename,
+                    &mut stream,
+                    &file,
+                    &filename,
+                    file_size,
                     chunk,
                 );
-
-            })
-        );
+            }
+        }));
     }
 
     for handle in handles {
