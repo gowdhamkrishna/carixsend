@@ -87,7 +87,7 @@ class TransferCard extends StatelessWidget {
             style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade400),
           ),
           const SizedBox(height: 12),
-          _buildProgressIndicator(statusColor),
+          _buildProgressIndicator(),
           if (transfer.status == FrbTransferStatus.transferring ||
               transfer.status == FrbTransferStatus.verifying ||
               transfer.status == FrbTransferStatus.completed) ...[
@@ -106,26 +106,23 @@ class TransferCard extends StatelessWidget {
               onAccept != null &&
               onReject != null) ...[
             const SizedBox(height: 16),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TVButton(
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    label: const Text('REJECT'),
-                    isSecondary: true,
-                    color: Colors.redAccent,
-                    onPressed: onReject,
-                  ),
+                TVButton(
+                  autofocus: true,
+                  icon: const Icon(Icons.check_circle_rounded, size: 20),
+                  label: const Text('ACCEPT'),
+                  color: Colors.greenAccent,
+                  onPressed: onAccept,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TVButton(
-                    autofocus: true,
-                    icon: const Icon(Icons.check_circle_rounded, size: 20),
-                    label: const Text('ACCEPT'),
-                    color: Colors.greenAccent,
-                    onPressed: onAccept,
-                  ),
+                const SizedBox(height: 12),
+                TVButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  label: const Text('REJECT'),
+                  isSecondary: true,
+                  color: Colors.redAccent,
+                  onPressed: onReject,
                 ),
               ],
             ),
@@ -148,14 +145,17 @@ class TransferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressIndicator(Color color) {
+  Widget _buildProgressIndicator() {
+    const trackColor = Color(0xFF16181C);
+    final progressColor = _getProgressColor();
+
     if (transfer.status == FrbTransferStatus.completed) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(4),
         child: LinearProgressIndicator(
           value: 1.0,
-          backgroundColor: Colors.grey.shade300,
-          valueColor: AlwaysStoppedAnimation<Color>(color),
+          backgroundColor: trackColor,
+          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           minHeight: 6,
         ),
       );
@@ -164,8 +164,8 @@ class TransferCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         child: LinearProgressIndicator(
           value: transfer.progress.progress.clamp(0.0, 1.0),
-          backgroundColor: Colors.grey.shade300,
-          valueColor: AlwaysStoppedAnimation<Color>(color),
+          backgroundColor: trackColor,
+          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           minHeight: 6,
         ),
       );
@@ -177,11 +177,26 @@ class TransferCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         child: LinearProgressIndicator(
           value: null,
-          backgroundColor: Colors.grey.shade300,
-          valueColor: AlwaysStoppedAnimation<Color>(color),
+          backgroundColor: trackColor,
+          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           minHeight: 6,
         ),
       );
+    }
+  }
+
+  Color _getProgressColor() {
+    switch (transfer.status) {
+      case FrbTransferStatus.completed:
+        return Colors.greenAccent;
+      case FrbTransferStatus.transferring:
+        return Colors.lightBlueAccent;
+      case FrbTransferStatus.recovering:
+        return Colors.orangeAccent;
+      case FrbTransferStatus.verifying:
+        return Colors.purpleAccent;
+      default:
+        return Colors.blueGrey;
     }
   }
 

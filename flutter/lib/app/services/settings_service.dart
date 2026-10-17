@@ -58,19 +58,11 @@ class SettingsService {
   /// Get standard system Downloads path with robust fallbacks.
   static Future<String> getDefaultDownloadsPath() async {
     if (Platform.isAndroid) {
-      // Dynamically find the storage volume root (avoids hardcoded /storage/emulated/0)
-      final storageRoot = await _findAndroidStorageRoot();
-      if (storageRoot != null) {
-        final downloadsDir = Directory('$storageRoot/Download');
-        if (downloadsDir.existsSync()) return downloadsDir.path;
-        // Try to create it if the root exists but Download folder doesn't yet
-        try {
-          await downloadsDir.create(recursive: true);
-          return downloadsDir.path;
-        } catch (_) {}
-        // Fall back to the storage root itself
-        return storageRoot;
-      }
+      // Hardcode the standard Android download path.
+      // Do NOT use existsSync() here because it throws FileSystemException
+      // on Android 11+ before permissions are granted, which would crash the
+      // receiver server startup.
+      return '/storage/emulated/0/Download';
     }
 
     try {
@@ -79,31 +71,6 @@ class SettingsService {
     } catch (_) {}
 
     return Directory.systemTemp.path;
-  }
-
-  /// Dynamically locate the Android external storage volume root.
-  static Future<String?> _findAndroidStorageRoot() async {
-    try {
-      final extDir = await getExternalStorageDirectory();
-      if (extDir != null) {
-        // Walk up to find the directory that contains an 'Android' child folder
-        Directory candidate = extDir;
-        for (int i = 0; i < 6; i++) {
-          if (await Directory('${candidate.path}/Android').exists()) {
-            return candidate.path;
-          }
-          final parent = candidate.parent;
-          if (parent.path == candidate.path) break;
-          candidate = parent;
-        }
-      }
-    } catch (_) {}
-
-    // Probe well-known paths as fallback
-    for (final path in ['/storage/emulated/0', '/sdcard', '/storage/sdcard0', '/mnt/sdcard']) {
-      if (Directory(path).existsSync()) return path;
-    }
-    return null;
   }
 
   /// Save custom destination directory path. Pass `null` to reset to default Downloads.

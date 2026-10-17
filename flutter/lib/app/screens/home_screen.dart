@@ -8,6 +8,7 @@ import '../../src/rust/frb_api.dart';
 import '../controllers/transfer_controller.dart';
 import '../widgets/transfer_card.dart';
 import '../widgets/tv_focusable.dart';
+import '../widgets/neumorphic_container.dart';
 import 'new_transfer_screen.dart';
 import 'receive_screen.dart';
 import 'settings_screen.dart';
@@ -99,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<TransferController>(context);
-    final transfers = controller.transferList;
+    final transfers = controller.transferList.reversed.toList();
     final theme = Theme.of(context);
     final isServerRunning = controller.isServerRunning;
     final deviceName = controller.deviceName;
@@ -142,24 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Center(
-                child: Container(
+                child: NeumorphicContainer(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFF3B3B3B),
-                        offset: Offset(-2, -2),
-                        blurRadius: 5,
-                      ),
-                      BoxShadow(
-                        color: Color(0xFF1D1D1D),
-                        offset: Offset(2, 2),
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
+                  borderRadius: 16.0,
+                  isPressed: false,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -198,9 +185,11 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
           ],
         ),
-        body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
+        body: Stack(
+          children: [
+            SafeArea(
+              child: CustomScrollView(
+                slivers: [
               // Hero Action Section: SEND, RECEIVE and BROWSE
               SliverPadding(
                 padding: const EdgeInsets.all(16),
@@ -324,8 +313,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 
   Widget _buildSendTile(BuildContext context, ThemeData theme, {bool autofocus = false}) {
@@ -347,24 +338,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              Container(
+              NeumorphicContainer(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: const Color(0xFF2C2C2C),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0xFF3B3B3B),
-                      offset: Offset(-2, -2),
-                      blurRadius: 5,
-                    ),
-                    BoxShadow(
-                      color: Color(0xFF1D1D1D),
-                      offset: Offset(2, 2),
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
+                borderRadius: 16.0,
+                isPressed: false,
                 child: const Icon(Icons.upload_rounded, size: 36, color: sendColor),
               ),
               const Spacer(),
@@ -415,24 +392,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              Container(
+              NeumorphicContainer(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: const Color(0xFF2C2C2C),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0xFF3B3B3B),
-                      offset: Offset(-2, -2),
-                      blurRadius: 5,
-                    ),
-                    BoxShadow(
-                      color: Color(0xFF1D1D1D),
-                      offset: Offset(2, 2),
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
+                borderRadius: 16.0,
+                isPressed: false,
                 child: const Icon(Icons.download_rounded, size: 36, color: receiveColor),
               ),
               const Spacer(),
@@ -462,6 +425,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
- 
 }

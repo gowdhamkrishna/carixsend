@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'neumorphic_container.dart';
 
 /// Reusable TV D-Pad focusable card wrapper.
 /// Optimized for low-spec Android TV hardware (no expensive blur/shadow filters)
@@ -73,42 +74,30 @@ class _TVFocusableCardState extends State<TVFocusableCard> {
   }
 
   Widget _buildContainer(BorderRadius effectiveBorderRadius, Color borderColor) {
-    return Container(
-        margin: widget.margin,
-        decoration: BoxDecoration(
+    return NeumorphicContainer(
+      margin: widget.margin ?? EdgeInsets.zero,
+      padding: EdgeInsets.zero, // Padding is handled by InkWell child
+      borderRadius: effectiveBorderRadius.topLeft.x,
+      isPressed: _isFocused,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: effectiveBorderRadius,
+        child: InkWell(
+          onTap: widget.focusable ? widget.onTap : null,
           borderRadius: effectiveBorderRadius,
-          color: const Color(0xFF2C2C2C), // Dark Neumorphic base
-          border: _isFocused
-              ? Border.all(color: borderColor, width: 2.0)
-              : null,
-          boxShadow: _isFocused
-              ? null // Pressed / Focused state removes outer shadow (could add inner shadow or rely on border)
-              : const [
-                  BoxShadow(
-                    color: Color(0xFF3B3B3B),
-                    offset: Offset(-4, -4),
-                    blurRadius: 10,
-                  ),
-                  BoxShadow(
-                    color: Color(0xFF1D1D1D),
-                    offset: Offset(4, 4),
-                    blurRadius: 10,
-                  ),
-                ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: effectiveBorderRadius,
-          child: InkWell(
-            onTap: widget.focusable ? widget.onTap : null,
-            borderRadius: effectiveBorderRadius,
-            child: Padding(
-              padding: widget.padding ?? EdgeInsets.zero,
-              child: widget.child,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: effectiveBorderRadius,
+              border: _isFocused
+                  ? Border.all(color: borderColor, width: 2.0)
+                  : null,
             ),
+            padding: widget.padding ?? EdgeInsets.zero,
+            child: widget.child,
           ),
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -170,34 +159,22 @@ class _TVButtonState extends State<TVButton> {
           },
         ),
       },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: const Color(0xFF2C2C2C),
-          border: _isFocused
-              ? Border.all(color: baseColor, width: 2.0)
-              : null,
-          boxShadow: (widget.onPressed == null || _isFocused)
-              ? null
-              : const [
-                  BoxShadow(
-                    color: Color(0xFF3B3B3B),
-                    offset: Offset(-3, -3),
-                    blurRadius: 8,
-                  ),
-                  BoxShadow(
-                    color: Color(0xFF1D1D1D),
-                    offset: Offset(3, 3),
-                    blurRadius: 8,
-                  ),
-                ],
-        ),
+      child: NeumorphicContainer(
+        padding: EdgeInsets.zero,
+        borderRadius: 12.0,
+        isPressed: widget.onPressed == null || _isFocused,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: widget.onPressed,
             borderRadius: BorderRadius.circular(12),
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: _isFocused
+                    ? Border.all(color: baseColor, width: 2.0)
+                    : null,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -208,13 +185,17 @@ class _TVButtonState extends State<TVButton> {
                     child: widget.icon,
                   ),
                   const SizedBox(width: 10),
-                  DefaultTextStyle(
-                    style: theme.textTheme.titleMedium!.copyWith(
-                      color: fgColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Flexible(
+                    child: DefaultTextStyle(
+                      style: theme.textTheme.titleMedium!.copyWith(
+                        color: fgColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      child: widget.label,
                     ),
-                    child: widget.label,
                   ),
                 ],
               ),
@@ -280,35 +261,23 @@ class _TVChoiceChipState extends State<TVChoiceChip> {
           },
         ),
       },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: const Color(0xFF2C2C2C),
-          border: _isFocused
-              ? Border.all(color: primary, width: 2.0)
-              : null,
-          boxShadow: widget.selected
-              ? null // No shadow for selected state (looks pressed)
-              : const [
-                  BoxShadow(
-                    color: Color(0xFF3B3B3B),
-                    offset: Offset(-3, -3),
-                    blurRadius: 6,
-                  ),
-                  BoxShadow(
-                    color: Color(0xFF1D1D1D),
-                    offset: Offset(3, 3),
-                    blurRadius: 6,
-                  ),
-                ],
-        ),
+      child: NeumorphicContainer(
+        padding: EdgeInsets.zero,
+        borderRadius: 20.0,
+        isPressed: widget.selected,
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           child: InkWell(
             onTap: () => widget.onSelected?.call(!widget.selected),
             borderRadius: BorderRadius.circular(20),
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: widget.selected || _isFocused
+                    ? Border.all(color: primary, width: 2.0)
+                    : null,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -323,13 +292,21 @@ class _TVChoiceChipState extends State<TVChoiceChip> {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  DefaultTextStyle(
-                    style: theme.textTheme.bodyMedium!.copyWith(
-                      color: fgColor,
-                      fontWeight: widget.selected || _isFocused ? FontWeight.bold : FontWeight.normal,
+                  Flexible(
+                    child: DefaultTextStyle(
+                      style: theme.textTheme.bodyMedium!.copyWith(
+                        color: fgColor,
+                        fontWeight: widget.selected || _isFocused ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      child: widget.label,
                     ),
-                    child: widget.label,
                   ),
+                  if (widget.selected) ...[
+                    const SizedBox(width: 8),
+                    Icon(Icons.check_circle_rounded, color: primary, size: 18),
+                  ],
                 ],
               ),
             ),
@@ -339,4 +316,3 @@ class _TVChoiceChipState extends State<TVChoiceChip> {
     );
   }
 }
-

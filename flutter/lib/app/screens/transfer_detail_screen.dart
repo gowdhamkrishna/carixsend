@@ -5,6 +5,7 @@ import '../../src/rust/frb_api.dart';
 import '../controllers/transfer_controller.dart';
 import '../widgets/error_message.dart';
 import '../widgets/tv_focusable.dart';
+import '../widgets/neumorphic_container.dart';
 
 class TransferDetailScreen extends StatefulWidget {
   final int transferId;
@@ -64,26 +65,10 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0xFF3B3B3B),
-                          offset: Offset(-4, -4),
-                          blurRadius: 10,
-                        ),
-                        BoxShadow(
-                          color: Color(0xFF1D1D1D),
-                          offset: Offset(4, 4),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+                  NeumorphicContainer(
+                    isPressed: false,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
                         children: [
                           _buildInfoRow('Status', _statusString(transfer.status)),
                           const Divider(),
@@ -111,28 +96,11 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                         ],
                       ),
                     ),
-                  ),
                   const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0xFF3B3B3B),
-                          offset: Offset(-4, -4),
-                          blurRadius: 10,
-                        ),
-                        BoxShadow(
-                          color: Color(0xFF1D1D1D),
-                          offset: Offset(4, 4),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+                  NeumorphicContainer(
+                    isPressed: false,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Real-Time Progress', style: theme.textTheme.titleMedium),
@@ -145,8 +113,10 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                                   : (transfer.status == FrbTransferStatus.transferring
                                       ? transfer.progress.progress.clamp(0.0, 1.0)
                                       : null),
-                              backgroundColor: Colors.grey.shade300,
-                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                              backgroundColor: const Color(0xFF16181C),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                _progressColor(transfer.status),
+                              ),
                               minHeight: 10,
                             ),
                           ),
@@ -172,7 +142,6 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                         ],
                       ),
                     ),
-                  ),
                   const SizedBox(height: 16),
                   Text('Files', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
@@ -265,6 +234,21 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
         return 'Failed';
       case FrbTransferStatus.cancelled:
         return 'Cancelled';
+    }
+  }
+
+  Color _progressColor(FrbTransferStatus status) {
+    switch (status) {
+      case FrbTransferStatus.completed:
+        return Colors.greenAccent;
+      case FrbTransferStatus.transferring:
+        return Colors.lightBlueAccent;
+      case FrbTransferStatus.recovering:
+        return Colors.orangeAccent;
+      case FrbTransferStatus.verifying:
+        return Colors.purpleAccent;
+      default:
+        return Colors.blueGrey;
     }
   }
 

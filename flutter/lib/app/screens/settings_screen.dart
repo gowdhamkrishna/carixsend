@@ -7,6 +7,7 @@ import '../controllers/transfer_controller.dart';
 import '../services/permission_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/tv_focusable.dart';
+import '../widgets/neumorphic_container.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,8 +17,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String? _currentDestPath;
-  String _defaultDownloadsPath = '';
   bool _isLoading = true;
 
   @override
@@ -27,23 +26,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadPaths() async {
-    final defaultPath = await SettingsService.getDefaultDownloadsPath();
+    await SettingsService.getDefaultDownloadsPath();
+    if (!mounted) return;
     final controller = Provider.of<TransferController>(context, listen: false);
-    final activeDest = await controller.getEffectiveDestinationDir();
+    await controller.getEffectiveDestinationDir();
 
     if (mounted) {
       setState(() {
-        _defaultDownloadsPath = defaultPath;
-        _currentDestPath = activeDest;
         _isLoading = false;
       });
     }
   }
 
   Future<void> _pickNewDestinationFolder() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final granted = await PermissionService.requestStoragePermissions();
-    if (!granted && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (!granted && mounted) {
+      scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Storage permission is required to choose folder.')),
       );
       return;
@@ -60,27 +59,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (newFolder != null && mounted) {
       final controller = Provider.of<TransferController>(context, listen: false);
       await controller.setDestinationDir(newFolder);
-      setState(() {
-        _currentDestPath = newFolder;
-      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Destination updated to: $newFolder')),
-      );
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Destination updated to: $newFolder')),
+        );
+      }
     }
   }
 
   Future<void> _resetToDefaultDownloads() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final controller = Provider.of<TransferController>(context, listen: false);
     await controller.setDestinationDir(null);
     final defaultPath = await SettingsService.getDefaultDownloadsPath();
 
     if (mounted) {
-      setState(() {
-        _currentDestPath = defaultPath;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(content: Text('Destination reset to default Downloads: $defaultPath')),
       );
     }
@@ -132,10 +127,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (newName != null && mounted) {
       await controller.setDeviceName(newName.isEmpty ? null : newName);
-      setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Device name updated to: ${controller.deviceName}')),
-      );
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Device name updated to: ${controller.deviceName}')),
+        );
+      }
     }
   }
 
@@ -193,24 +190,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onTap: _editDeviceNameDialog,
                           child: Row(
                             children: [
-                              Container(
+                              NeumorphicContainer(
                                 padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2C2C2C),
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0xFF3B3B3B),
-                                      offset: Offset(-2, -2),
-                                      blurRadius: 5,
-                                    ),
-                                    BoxShadow(
-                                      color: Color(0xFF1D1D1D),
-                                      offset: Offset(2, 2),
-                                      blurRadius: 5,
-                                    ),
-                                  ],
-                                ),
+                                borderRadius: 14.0,
+                                isPressed: false,
                                 child: const Icon(Icons.tv_rounded, color: primaryColor, size: 28),
                               ),
                               const SizedBox(width: 14),
@@ -228,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     Text(
                                       controller.deviceName,
                                       style: theme.textTheme.titleLarge?.copyWith(
-                                        color: Colors.black,
+                                        color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         fontFamily: 'monospace',
                                       ),
@@ -258,7 +241,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         // Destination Path Setting Card
                         TVFocusableCard(
-                          autofocus: true,
+                          // The controls inside this card are the interactive
+                          // elements. Keeping the decorative container out of
+                          // traversal lets D-pad focus reach Browse/Default.
+                          focusable: false,
                           focusBorderColor: primaryColor,
                           focusBackgroundColor: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(20),
@@ -268,24 +254,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Container(
+                                  NeumorphicContainer(
                                     padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2C2C2C),
-                                      borderRadius: BorderRadius.circular(14),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Color(0xFF3B3B3B),
-                                          offset: Offset(-2, -2),
-                                          blurRadius: 5,
-                                        ),
-                                        BoxShadow(
-                                          color: Color(0xFF1D1D1D),
-                                          offset: Offset(2, 2),
-                                          blurRadius: 5,
-                                        ),
-                                      ],
-                                    ),
+                                    borderRadius: 14.0,
+                                    isPressed: false,
                                     child: const Icon(Icons.folder_special_rounded, color: primaryColor, size: 28),
                                   ),
                                   const SizedBox(width: 14),

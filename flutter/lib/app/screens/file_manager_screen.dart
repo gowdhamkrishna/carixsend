@@ -21,7 +21,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   String _currentPath = '';
   String _storageRoot = '';
   List<FileSystemEntity> _entities = [];
-  Set<String> _selectedPaths = {};
+  final Set<String> _selectedPaths = {};
   bool _isLoading = true;
   bool _hasPermission = false;
 
@@ -32,21 +32,33 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   }
 
   Future<String> _findStorageRoot() async {
+    // Probe well-known paths FIRST (this instantly resolves on 99% of Android phones)
+    for (final path in ['/storage/emulated/0', '/sdcard', '/storage/sdcard0', '/mnt/sdcard']) {
+      if (await Directory(path).exists()) {
+        debugPrint('[FileManager] Using probed path: $path');
+        return path;
+      }
+    }
+
     // On Android TV / boxes, start from /storage so all volumes are visible
     // (internal emulated + any USB drives mounted under /storage/<UUID>)
-    if (await Directory('/storage').exists()) {
-      final storageChildren = await Directory('/storage').list().toList();
-      debugPrint('[FileManager] /storage children: ${storageChildren.map((e) => e.path).toList()}');
-      // If /storage has more than just 'emulated', show /storage as root so
-      // user sees all volumes.  Otherwise dive straight into emulated/0.
-      final hasExtraVolumes = storageChildren.any((e) {
-        final name = e.path.split('/').last;
-        return name != 'emulated' && name != 'self';
-      });
-      if (hasExtraVolumes) {
-        debugPrint('[FileManager] Extra volumes found, using /storage as root');
-        return '/storage';
+    try {
+      if (await Directory('/storage').exists()) {
+        final storageChildren = await Directory('/storage').list().toList();
+        debugPrint('[FileManager] /storage children: ${storageChildren.map((e) => e.path).toList()}');
+        // If /storage has more than just 'emulated', show /storage as root so
+        // user sees all volumes.  Otherwise dive straight into emulated/0.
+        final hasExtraVolumes = storageChildren.any((e) {
+          final name = e.path.split('/').last;
+          return name != 'emulated' && name != 'self';
+        });
+        if (hasExtraVolumes) {
+          debugPrint('[FileManager] Extra volumes found, using /storage as root');
+          return '/storage';
+        }
       }
+    } catch (e) {
+      debugPrint('[FileManager] /storage list error: $e');
     }
 
     // Try path_provider — getExternalStorageDirectory() returns something like
@@ -60,7 +72,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           final androidChild = Directory('${candidate.path}/Android');
           if (await androidChild.exists()) {
             debugPrint('[FileManager] Found Android child at: ${candidate.path}');
-            return candidate.path;
+            return candidate.path == '.' ? '/storage/emulated/0' : candidate.path;
           }
           final parent = candidate.parent;
           if (parent.path == candidate.path) break;
@@ -75,23 +87,15 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         }
         if (await root.exists()) {
           debugPrint('[FileManager] Fallback root (4 levels up): ${root.path}');
-          return root.path;
+          return root.path == '.' ? '/storage/emulated/0' : root.path;
         }
       }
     } catch (e) {
       debugPrint('[FileManager] getExternalStorageDirectory error: $e');
     }
 
-    // Probe well-known paths
-    for (final path in ['/storage/emulated/0', '/sdcard', '/storage/sdcard0', '/mnt/sdcard']) {
-      if (await Directory(path).exists()) {
-        debugPrint('[FileManager] Using probed path: $path');
-        return path;
-      }
-    }
-
     debugPrint('[FileManager] Falling back to filesystem root /');
-    return '/';
+    return '/storage/emulated/0';
   }
 
   Future<void> _initStorage() async {
@@ -185,11 +189,14 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   }
 
   Future<bool> _onWillPop() async {
-    final root = _storageRoot.isNotEmpty ? _storageRoot : '/';
-    if (_currentPath != root && _currentPath != '/') {
+    if (_currentPath.isEmpty) return true;
+    final root = _storageRoot.isNotEmpty ? _storageRoot : '/storage/emulated/0';
+    if (_currentPath != root && _currentPath != '/' && _currentPath != '/storage/emulated/0') {
       final parentDir = Directory(_currentPath).parent.path;
-      _loadDirectory(parentDir);
-      return false;
+      if (parentDir != '.' && parentDir.isNotEmpty) {
+        _loadDirectory(parentDir);
+        return false;
+      }
     }
     return true;
   }
@@ -207,9 +214,10 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           }
         });
       } else if (widget.mode == FileManagerMode.view) {
+        final scaffoldMessenger = ScaffoldMessenger.of(context);
         OpenFilex.open(entity.path).then((result) {
-          if (result.type != ResultType.done && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+          if (result.type != ResultType.done && mounted) {
+            scaffoldMessenger.showSnackBar(
               SnackBar(content: Text('Could not open file: ${result.message}')),
             );
           }
@@ -267,7 +275,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
             DismissIntent: CallbackAction<DismissIntent>(
               onInvoke: (intent) async {
                 final pop = await _onWillPop();
-                if (pop && mounted) {
+                if (pop && context.mounted) {
                   Navigator.maybePop(context);
                 }
                 return null;

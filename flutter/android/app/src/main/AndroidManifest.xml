@@ -22,6 +22,7 @@
         android:label="Send to TV"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/banner"
         android:usesCleartextTraffic="true">
 
     <meta-data
@@ -29,7 +30,7 @@
         android:value="ca-app-pub-2976225402765370~4326158708"/>
 
         
-        <activity
+        <activity   
             android:name=".MainActivity"    
             android:exported="true"
             android:launchMode="singleTop"

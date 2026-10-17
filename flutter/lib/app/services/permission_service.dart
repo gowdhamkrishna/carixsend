@@ -16,13 +16,12 @@ class PermissionService {
       }
 
       // 2. On Android 13+ (API 33+), request media permissions
-      final photosStatus = await Permission.photos.request();
-      final videosStatus = await Permission.videos.request();
-      final audioStatus = await Permission.audio.request();
+      await Permission.photos.request();
+      await Permission.videos.request();
+      await Permission.audio.request();
 
-      if (photosStatus.isGranted || videosStatus.isGranted || audioStatus.isGranted) {
-        return true;
-      }
+      // Media permissions alone do NOT grant raw filesystem write access on Android 11+.
+      // We must check manageExternalStorage for the Rust core to use File::create.
 
       // 3. For TV & file manager access on Android 11+ (API 30+), check manage external storage
       if (await Permission.manageExternalStorage.isGranted) {

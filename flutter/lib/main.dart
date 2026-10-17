@@ -35,7 +35,7 @@ class CarixSendApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const primaryColor = Colors.white;
-    const neumorphicBase = Color(0xFF2C2C2C);
+    const neumorphicBase = Color(0xFF2A2D32);
 
     return MaterialApp(
       title: 'Send to TV',

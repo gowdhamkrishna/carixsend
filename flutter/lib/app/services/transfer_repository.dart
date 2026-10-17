@@ -44,8 +44,8 @@ class RustTransferRepository implements TransferRepository {
         FrbTransferOptions(
           workerCount: BigInt.from(4),
           chunkSize: BigInt.from(4 * 1024 * 1024),
-          bufferSize: BigInt.from(128 * 1024),
-          queueCapacity: BigInt.from(8),
+          bufferSize: BigInt.from(1024 * 1024),
+          queueCapacity: BigInt.from(32),
         );
 
     final idVal = await frbStartTransfer(

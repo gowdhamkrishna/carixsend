@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import '../../src/rust/frb_api.dart';
 import '../controllers/transfer_controller.dart';
 import '../services/device_discovery_service.dart';
-import '../services/permission_service.dart';
 import '../widgets/tv_focusable.dart';
+import '../widgets/neumorphic_container.dart';
 import 'file_manager_screen.dart';
 
 class NewTransferScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
   StreamSubscription<List<DiscoveredDevice>>? _discoverySub;
 
   List<PlatformFile> _selectedFiles = [];
-  int _workerCount = 4;
+  final int _workerCount = 4;
   bool _isSubmitting = false;
 
   @override
@@ -48,6 +48,18 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
       if (mounted) {
         setState(() {
           _discoveredDevices = devices;
+          final currentAddress = _serverAddrController.text.trim();
+          final currentSelectionStillAvailable = devices.any(
+            (device) => device.address == currentAddress,
+          );
+
+          // Remove an unnecessary choice when discovery finds exactly one
+          // receiver. Preserve a deliberate selection when several devices
+          // are already available.
+          if (devices.length == 1 &&
+              (currentAddress.isEmpty || !currentSelectionStillAvailable)) {
+            _serverAddrController.text = devices.single.address;
+          }
         });
       }
     });
@@ -175,8 +187,8 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
         options: FrbTransferOptions(
           workerCount: BigInt.from(_workerCount),
           chunkSize: BigInt.from(4 * 1024 * 1024),
-          bufferSize: BigInt.from(128 * 1024),
-          queueCapacity: BigInt.from(8),
+          bufferSize: BigInt.from(1024 * 1024),
+          queueCapacity: BigInt.from(32),
         ),
       );
 
@@ -242,26 +254,10 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0xFF3B3B3B),
-                            offset: Offset(-4, -4),
-                            blurRadius: 10,
-                          ),
-                          BoxShadow(
-                            color: Color(0xFF1D1D1D),
-                            offset: Offset(4, 4),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
+                    NeumorphicContainer(
+                      isPressed: false,
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
@@ -316,7 +312,6 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                                 }).toList(),
                               ),
                           ],
-                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -339,24 +334,10 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                       onTap: _pickFiles,
                       child: Row(
                         children: [
-                          Container(
+                          NeumorphicContainer(
                             padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2C2C2C),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0xFF3B3B3B),
-                                  offset: Offset(-2, -2),
-                                  blurRadius: 5,
-                                ),
-                                BoxShadow(
-                                  color: Color(0xFF1D1D1D),
-                                  offset: Offset(2, 2),
-                                  blurRadius: 5,
-                                ),
-                              ],
-                            ),
+                            borderRadius: 12.0,
+                            isPressed: false,
                             child: const Icon(Icons.folder_open_rounded, color: primaryColor, size: 28),
                           ),
                           const SizedBox(width: 16),
